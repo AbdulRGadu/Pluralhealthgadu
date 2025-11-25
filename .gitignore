@@ -1,0 +1,20 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build outputs
+bin/
+obj/
+
+# Packages
+packages/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+
+# Publish
+wwwroot/
