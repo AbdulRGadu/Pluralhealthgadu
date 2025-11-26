@@ -2,6 +2,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient<pluralhealth_UI.Services.ApiClient>();
+builder.Services.AddScoped<pluralhealth_UI.Services.ApiClient>();
 
 var app = builder.Build();
 

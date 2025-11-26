@@ -3,6 +3,36 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Welcome to Pluralhealth</h1>
+    <p class="lead">Appointment & Billing Management System</p>
+    <hr />
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Records</h5>
+                    <p class="card-text">View and manage patient records, appointments, and invoices.</p>
+                    <a href="@Url.Action("Index", "Records")" class="btn btn-primary">View Records</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Add Patient</h5>
+                    <p class="card-text">Register a new patient in the system.</p>
+                    <a href="@Url.Action("Create", "Patients")" class="btn btn-primary">Add Patient</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Create Appointment</h5>
+                    <p class="card-text">Schedule new patient appointments.</p>
+                    <a href="@Url.Action("Create", "Appointments")" class="btn btn-primary">Create Appointment</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

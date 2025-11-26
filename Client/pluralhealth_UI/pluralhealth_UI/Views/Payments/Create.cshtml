@@ -1,0 +1,83 @@
+@model pluralhealth_UI.Models.ViewModels.CreatePaymentViewModel
+@{
+    ViewData["Title"] = "Pay Invoice";
+}
+
+<div class="container mt-4">
+    <h2>Pay Invoice</h2>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            @Model.SuccessMessage
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Invoice Summary</h5>
+            <p><strong>Invoice Number:</strong> @Model.InvoiceNumber</p>
+            <p><strong>Patient:</strong> @Model.PatientName</p>
+            <p><strong>Invoice Total:</strong> @Model.Currency @Model.InvoiceTotal.ToString("N2")</p>
+            <p><strong>Total Paid:</strong> @Model.Currency @Model.TotalPaid.ToString("N2")</p>
+            <p><strong>Remaining Balance:</strong> <span class="text-danger">@Model.Currency @Model.RemainingBalance.ToString("N2")</span></p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" asp-action="Create">
+                <input type="hidden" asp-for="InvoiceId" />
+                <input type="hidden" asp-for="InvoiceNumber" />
+                <input type="hidden" asp-for="PatientName" />
+                <input type="hidden" asp-for="InvoiceTotal" />
+                <input type="hidden" asp-for="TotalPaid" />
+                <input type="hidden" asp-for="RemainingBalance" />
+                <input type="hidden" asp-for="Currency" />
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="amount" class="form-label">Payment Amount</label>
+                        <input type="number" class="form-control" asp-for="Amount" min="0.01" step="0.01" max="@Model.RemainingBalance" required />
+                        <small class="form-text text-muted">Maximum: @Model.Currency @Model.RemainingBalance.ToString("N2")</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="paymentMethod" class="form-label">Payment Method</label>
+                        <select class="form-select" asp-for="PaymentMethod" required>
+                            <option value="Cash" selected="@(Model.PaymentMethod == "Cash")">Cash</option>
+                            <option value="Card" selected="@(Model.PaymentMethod == "Card")">Card</option>
+                            <option value="Wallet" selected="@(Model.PaymentMethod == "Wallet")">Wallet</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Process Payment</button>
+                        <a href="@Url.Action("Index", "Records")" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Set max amount to remaining balance
+        document.getElementById('Amount').addEventListener('input', function() {
+            const maxAmount = @Model.RemainingBalance;
+            if (parseFloat(this.value) > maxAmount) {
+                this.value = maxAmount.toFixed(2);
+            }
+        });
+    </script>
+}
+

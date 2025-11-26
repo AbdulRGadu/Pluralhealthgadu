@@ -1,0 +1,124 @@
+@model pluralhealth_UI.Models.ViewModels.CreateAppointmentViewModel
+@{
+    ViewData["Title"] = "Create Appointment";
+}
+
+<div class="container mt-4">
+    <h2>Create Appointment</h2>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            @Model.SuccessMessage
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" asp-action="Create">
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="patientSearch" class="form-label">Search Patient</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="patientSearch" name="patientSearch" value="@Model.PatientSearch" placeholder="Search by name, code, or phone" />
+                            <button type="button" class="btn btn-outline-secondary" onclick="searchPatients()">Search</button>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.Patients.Any())
+                {
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="patientId" class="form-label">Select Patient</label>
+                            <select class="form-select" id="patientId" name="PatientId" required>
+                                <option value="">-- Select Patient --</option>
+                                @foreach (var patient in Model.Patients)
+                                {
+                                    <option value="@patient.Id" selected="@(Model.PatientId == patient.Id)">
+                                        @patient.Name (@patient.Code) - @patient.Phone
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                }
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="clinicId" class="form-label">Clinic</label>
+                        <select class="form-select" id="clinicId" name="ClinicId" required>
+                            <option value="">-- Select Clinic --</option>
+                            @foreach (var clinic in Model.Clinics)
+                            {
+                                <option value="@clinic.Id" selected="@(Model.ClinicId == clinic.Id)">@clinic.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="appointmentTypeId" class="form-label">Appointment Type</label>
+                        <select class="form-select" id="appointmentTypeId" name="AppointmentTypeId" required>
+                            <option value="">-- Select Type --</option>
+                            @foreach (var type in Model.AppointmentTypes)
+                            {
+                                <option value="@type.Id" data-duration="@type.DefaultDurationMinutes" selected="@(Model.AppointmentTypeId == type.Id)">
+                                    @type.Name (@type.DefaultDurationMinutes min)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="appointmentDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="appointmentDate" name="AppointmentDate" value="@Model.AppointmentDate.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="appointmentTime" class="form-label">Time</label>
+                        <input type="time" class="form-control" id="appointmentTime" name="AppointmentTime" value="@Model.AppointmentTime.ToString(@"hh\:mm")" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="durationMinutes" class="form-label">Duration (minutes)</label>
+                        <input type="number" class="form-control" id="durationMinutes" name="DurationMinutes" value="@Model.DurationMinutes" min="15" step="15" required />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Create Appointment</button>
+                        <a href="@Url.Action("Index", "Records")" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function searchPatients() {
+            const searchTerm = document.getElementById('patientSearch').value;
+            if (searchTerm) {
+                window.location.href = '@Url.Action("Create")?patientSearch=' + encodeURIComponent(searchTerm);
+            }
+        }
+
+        // Auto-set duration when appointment type changes
+        document.getElementById('appointmentTypeId').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const duration = selectedOption.getAttribute('data-duration');
+            if (duration) {
+                document.getElementById('durationMinutes').value = duration;
+            }
+        });
+    </script>
+}
+

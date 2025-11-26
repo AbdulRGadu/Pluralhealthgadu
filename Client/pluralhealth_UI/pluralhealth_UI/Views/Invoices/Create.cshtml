@@ -1,0 +1,181 @@
+@model pluralhealth_UI.Models.ViewModels.CreateInvoiceViewModel
+@{
+    ViewData["Title"] = "Create Invoice";
+}
+
+<div class="container mt-4">
+    <h2>Create Invoice</h2>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Patient Information</h5>
+            <p><strong>Name:</strong> @Model.PatientName (@Model.PatientCode)</p>
+            <p><strong>Wallet Balance:</strong> @Model.Currency @Model.WalletBalance.ToString("N2")</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" asp-action="Create" id="invoiceForm">
+                <input type="hidden" asp-for="PatientId" />
+                <input type="hidden" asp-for="PatientName" />
+                <input type="hidden" asp-for="PatientCode" />
+                <input type="hidden" asp-for="WalletBalance" />
+                <input type="hidden" asp-for="Currency" />
+
+                <h5>Invoice Items</h5>
+                <div class="row mb-2">
+                    <div class="col-md-4"><label class="form-label fw-bold">Service Name</label></div>
+                    <div class="col-md-2"><label class="form-label fw-bold">Quantity</label></div>
+                    <div class="col-md-2"><label class="form-label fw-bold">Unit Price</label></div>
+                    <div class="col-md-2"><label class="form-label fw-bold">Discount</label></div>
+                    <div class="col-md-2"><label class="form-label fw-bold">Line Total</label></div>
+                </div>
+                <div id="itemsContainer">
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        <div class="row mb-3 item-row">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" asp-for="Items[i].ServiceName" placeholder="Service Name" required />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control quantity" asp-for="Items[i].Quantity" min="1" value="@Model.Items[i].Quantity" required />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control unit-price" asp-for="Items[i].UnitPrice" min="0" step="0.01" value="@Model.Items[i].UnitPrice" required />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control discount" asp-for="Items[i].DiscountAmount" min="0" step="0.01" value="@Model.Items[i].DiscountAmount" />
+                            </div>
+                            <div class="col-md-2">
+                                <input type="text" class="form-control line-total" readonly value="0.00" />
+                                @if (i > 0)
+                                {
+                                    <button type="button" class="btn btn-sm btn-danger mt-1 remove-item">Remove</button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-sm btn-secondary" id="addItem">Add Item</button>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-8"></div>
+                    <div class="col-md-4">
+                        <div class="mb-2">
+                            <label class="form-label">Subtotal:</label>
+                            <input type="text" class="form-control" id="subtotal" readonly value="0.00" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Invoice Discount:</label>
+                            <input type="number" class="form-control" asp-for="DiscountAmount" min="0" step="0.01" id="invoiceDiscount" value="@Model.DiscountAmount" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label"><strong>Total:</strong></label>
+                            <input type="text" class="form-control" id="total" readonly value="0.00" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Create & Finalize Invoice</button>
+                        <a href="@Url.Action("Index", "Records")" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let itemIndex = @Model.Items.Count;
+
+        function calculateTotals() {
+            let subtotal = 0;
+            
+            document.querySelectorAll('.item-row').forEach(row => {
+                const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+                const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+                const discount = parseFloat(row.querySelector('.discount').value) || 0;
+                const lineTotal = (quantity * unitPrice) - discount;
+                
+                row.querySelector('.line-total').value = lineTotal.toFixed(2);
+                subtotal += lineTotal;
+            });
+
+            const invoiceDiscount = parseFloat(document.getElementById('invoiceDiscount').value) || 0;
+            const total = subtotal - invoiceDiscount;
+
+            document.getElementById('subtotal').value = subtotal.toFixed(2);
+            document.getElementById('total').value = total.toFixed(2);
+        }
+
+        document.getElementById('addItem').addEventListener('click', function() {
+            const container = document.getElementById('itemsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'row mb-3 item-row';
+            newRow.innerHTML = `
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="Items[${itemIndex}].ServiceName" placeholder="Service Name" required />
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control quantity" name="Items[${itemIndex}].Quantity" min="1" value="1" required />
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control unit-price" name="Items[${itemIndex}].UnitPrice" min="0" step="0.01" value="0" required />
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control discount" name="Items[${itemIndex}].DiscountAmount" min="0" step="0.01" value="0" />
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control line-total" readonly value="0.00" />
+                    <button type="button" class="btn btn-sm btn-danger mt-1 remove-item">Remove</button>
+                </div>
+            `;
+            container.appendChild(newRow);
+            itemIndex++;
+
+            // Add remove event listener
+            newRow.querySelector('.remove-item').addEventListener('click', function() {
+                this.closest('.item-row').remove();
+                calculateTotals();
+            });
+
+            // Add calculation listeners
+            newRow.querySelectorAll('.quantity, .unit-price, .discount').forEach(input => {
+                input.addEventListener('input', calculateTotals);
+            });
+        });
+
+        // Add remove listeners to existing items
+        document.querySelectorAll('.remove-item').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.item-row').remove();
+                calculateTotals();
+            });
+        });
+
+        // Add calculation listeners to all inputs
+        document.querySelectorAll('.quantity, .unit-price, .discount, #invoiceDiscount').forEach(input => {
+            input.addEventListener('input', calculateTotals);
+        });
+
+        // Initial calculation
+        calculateTotals();
+    </script>
+}
+

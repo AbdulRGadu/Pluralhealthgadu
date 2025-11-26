@@ -1,0 +1,155 @@
+@model pluralhealth_UI.Models.ViewModels.RecordsIndexViewModel
+@{
+    ViewData["Title"] = "Records";
+}
+
+<div class="container mt-4">
+    <h2>Records</h2>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="@Url.Action("Index")">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="clinicId" class="form-label">Clinic</label>
+                        <select class="form-select" id="clinicId" name="clinicId">
+                            <option value="">All Clinics</option>
+                            @foreach (var clinic in Model.Clinics)
+                            {
+                                <option value="@clinic.Id" selected="@(Model.ClinicId == clinic.Id)">@clinic.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" value="@Model.Search" placeholder="Name, Code, Phone" />
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.Records.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5>Records (@Model.TotalCount total)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Patient Name/Code</th>
+                                <th>Appointment Time</th>
+                                <th>Status</th>
+                                <th>Clinic</th>
+                                <th>Wallet Balance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var record in Model.Records)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@record.PatientName</strong><br />
+                                        <small class="text-muted">@record.PatientCode</small>
+                                    </td>
+                                    <td>@record.AppointmentTime.ToString("MM/dd/yyyy HH:mm")</td>
+                                    <td>
+                                        <span class="badge bg-info">@record.Status</span>
+                                        @if (!string.IsNullOrEmpty(record.InvoiceStatus))
+                                        {
+                                            <br /><small class="text-muted">Invoice: @record.InvoiceStatus</small>
+                                        }
+                                    </td>
+                                    <td>@record.ClinicName</td>
+                                    <td>@record.Currency @record.WalletBalance.ToString("N2")</td>
+                                    <td>
+                                        @if (record.InvoiceId == null)
+                                        {
+                                            <button class="btn btn-sm btn-success create-invoice-btn" data-patient-id="@record.PatientId" data-appointment-id="@record.AppointmentId">
+                                                Create Invoice
+                                            </button>
+                                        }
+                                        else if (record.InvoiceStatus == "Finalized" || record.InvoiceStatus == "PartiallyPaid")
+                                        {
+                                            <button class="btn btn-sm btn-primary pay-invoice-btn" data-invoice-id="@record.InvoiceId">
+                                                Pay Invoice
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.Page ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i, startDate = Model.StartDate, endDate = Model.EndDate, clinicId = Model.ClinicId, search = Model.Search })">@i</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            No records found. Try adjusting your filters.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle Create Invoice button
+            document.querySelectorAll('.create-invoice-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const patientId = this.getAttribute('data-patient-id');
+                    window.location.href = '@Url.Action("Create", "Invoices")?patientId=' + patientId;
+                });
+            });
+
+            // Handle Pay Invoice button
+            document.querySelectorAll('.pay-invoice-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const invoiceId = this.getAttribute('data-invoice-id');
+                    window.location.href = '@Url.Action("Create", "Payments")?invoiceId=' + invoiceId;
+                });
+            });
+        });
+    </script>
+}
+

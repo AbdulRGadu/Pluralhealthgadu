@@ -1,0 +1,68 @@
+@model pluralhealth_UI.Models.ViewModels.CreatePatientViewModel
+@{
+    ViewData["Title"] = "Add Patient";
+}
+
+<div class="container mt-4">
+    <h2>Add New Patient</h2>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            @Model.SuccessMessage
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" asp-action="Create">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Patient Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" asp-for="Name" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" asp-for="Phone" placeholder="+2341234567890" />
+                        <span asp-validation-for="Phone" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="walletBalance" class="form-label">Initial Wallet Balance</label>
+                        <input type="number" class="form-control" id="walletBalance" asp-for="WalletBalance" min="0" step="0.01" value="0" />
+                        <small class="form-text text-muted">Default: 0.00</small>
+                    </div>
+                   @* <div class="col-md-6"></div>
+                        <label for="currency" class="form-label">Currency</label>
+                        <select class="form-select" id="currency" asp-for="Currency">
+                            <option value="NGN" selected>NGN (Nigerian Naira)</option>
+                        </select>
+                    </div>
+                    *@
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">Create Patient</button>
+                        <a href="@Url.Action("Index", "Records")" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
