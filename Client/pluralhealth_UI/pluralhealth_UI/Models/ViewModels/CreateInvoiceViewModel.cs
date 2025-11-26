@@ -2,7 +2,9 @@ namespace pluralhealth_UI.Models.ViewModels
 {
     public class CreateInvoiceViewModel
     {
+        public int? InvoiceId { get; set; }
         public int PatientId { get; set; }
+        public int? AppointmentId { get; set; }
         public string PatientName { get; set; } = string.Empty;
         public string PatientCode { get; set; } = string.Empty;
         public decimal WalletBalance { get; set; }

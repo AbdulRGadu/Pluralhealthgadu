@@ -11,6 +11,7 @@ namespace pluralhealth_API.DTOs
     public class CreateInvoiceRequest
     {
         public int PatientId { get; set; }
+        public int? AppointmentId { get; set; }
         public List<InvoiceItemRequest> Items { get; set; } = new();
         public decimal DiscountAmount { get; set; }
     }

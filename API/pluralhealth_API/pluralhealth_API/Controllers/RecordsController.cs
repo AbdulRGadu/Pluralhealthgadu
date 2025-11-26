@@ -31,11 +31,11 @@ namespace pluralhealth_API.Controllers
         {
             var facilityId = (int)(HttpContext.Items["FacilityId"] ?? 1);
 
-            // Default to today and next 7 days if no date range provided (using local time)
+            // Default to today only if no date range provided (using local time)
             if (!startDate.HasValue)
                 startDate = DateTime.Now.Date;
             if (!endDate.HasValue)
-                endDate = startDate.Value.AddDays(7).AddTicks(-1); // Show next 7 days by default
+                endDate = startDate.Value.AddDays(1).AddTicks(-1); // End of today
 
             _logger.LogInformation("Records list loaded. FacilityId: {FacilityId}, StartDate: {StartDate}, EndDate: {EndDate}, Page: {Page}, PageSize: {PageSize}",
                 facilityId, startDate, endDate, page, pageSize);
@@ -79,15 +79,16 @@ namespace pluralhealth_API.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
-            // Get invoice information for each appointment
-            var patientIds = appointments.Select(a => a.PatientId).Distinct().ToList();
+            // Get invoice information for each appointment (match by AppointmentId)
+            var appointmentIds = appointments.Select(a => a.Id).ToList();
             var invoices = await _context.Invoices
-                .Where(i => patientIds.Contains(i.PatientId) && i.Status != "Draft")
+                .Where(i => appointmentIds.Contains(i.AppointmentId ?? 0) && i.Status != "Draft")
                 .ToListAsync();
 
             var records = appointments.Select(a =>
             {
-                var patientInvoice = invoices.FirstOrDefault(i => i.PatientId == a.PatientId);
+                // Find invoice specifically for this appointment
+                var appointmentInvoice = invoices.FirstOrDefault(i => i.AppointmentId == a.Id);
                 return new RecordsResponse
                 {
                     AppointmentId = a.Id,
@@ -99,8 +100,8 @@ namespace pluralhealth_API.Controllers
                     ClinicName = a.Clinic!.Name,
                     WalletBalance = a.Patient.WalletBalance,
                     Currency = a.Patient.Currency,
-                    InvoiceId = patientInvoice?.Id,
-                    InvoiceStatus = patientInvoice?.Status
+                    InvoiceId = appointmentInvoice?.Id,
+                    InvoiceStatus = appointmentInvoice?.Status
                 };
             }).ToList();
 

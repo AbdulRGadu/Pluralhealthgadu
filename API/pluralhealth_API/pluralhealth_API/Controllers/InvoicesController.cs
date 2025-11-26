@@ -53,6 +53,17 @@ namespace pluralhealth_API.Controllers
             if (patient == null)
                 return NotFound("Patient not found.");
 
+            // Verify appointment exists and belongs to patient if provided
+            if (request.AppointmentId.HasValue)
+            {
+                var appointment = await _context.Appointments
+                    .FirstOrDefaultAsync(a => a.Id == request.AppointmentId.Value && 
+                        a.PatientId == request.PatientId && 
+                        a.FacilityId == facilityId);
+                if (appointment == null)
+                    return NotFound("Appointment not found or does not belong to this patient.");
+            }
+
             // Calculate totals
             decimal subtotal = 0;
             var invoiceItems = new List<InvoiceItem>();
@@ -94,6 +105,7 @@ namespace pluralhealth_API.Controllers
             var invoice = new Invoice
             {
                 PatientId = request.PatientId,
+                AppointmentId = request.AppointmentId,
                 Status = "Draft",
                 Subtotal = Math.Round(subtotal, 2),
                 DiscountAmount = Math.Round(request.DiscountAmount, 2),
@@ -106,6 +118,20 @@ namespace pluralhealth_API.Controllers
 
             _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync();
+
+            // Log discount if applied
+            if (request.DiscountAmount > 0)
+            {
+                _logger.LogInformation("Discount applied on invoice creation. InvoiceId: {InvoiceId}, DiscountAmount: {DiscountAmount}, FacilityId: {FacilityId}, CreatedBy: {CreatedBy}",
+                    invoice.Id, request.DiscountAmount, facilityId, userId);
+            }
+
+            // Log line-level discounts
+            foreach (var item in invoiceItems.Where(i => i.DiscountAmount > 0))
+            {
+                _logger.LogInformation("Line discount applied. InvoiceId: {InvoiceId}, ServiceName: {ServiceName}, DiscountAmount: {DiscountAmount}, FacilityId: {FacilityId}",
+                    invoice.Id, item.ServiceName, item.DiscountAmount, facilityId);
+            }
 
             _logger.LogInformation("Invoice created. InvoiceId: {InvoiceId}, PatientId: {PatientId}, FacilityId: {FacilityId}, CreatedBy: {CreatedBy}",
                 invoice.Id, invoice.PatientId, facilityId, userId);
@@ -207,12 +233,27 @@ namespace pluralhealth_API.Controllers
             if (total < 0)
                 return BadRequest("Invoice total cannot be negative.");
 
+            var oldDiscountAmount = invoice.DiscountAmount;
             invoice.Subtotal = Math.Round(subtotal, 2);
             invoice.DiscountAmount = Math.Round(request.DiscountAmount, 2);
             invoice.Total = total;
             invoice.Items = invoiceItems;
 
             await _context.SaveChangesAsync();
+
+            // Log discount changes if applied
+            if (request.DiscountAmount > 0 && request.DiscountAmount != oldDiscountAmount)
+            {
+                _logger.LogInformation("Discount applied on invoice update. InvoiceId: {InvoiceId}, OldDiscountAmount: {OldDiscountAmount}, NewDiscountAmount: {DiscountAmount}, FacilityId: {FacilityId}",
+                    invoice.Id, oldDiscountAmount, request.DiscountAmount, facilityId);
+            }
+
+            // Log line-level discounts
+            foreach (var item in invoiceItems.Where(i => i.DiscountAmount > 0))
+            {
+                _logger.LogInformation("Line discount applied on invoice update. InvoiceId: {InvoiceId}, ServiceName: {ServiceName}, DiscountAmount: {DiscountAmount}, FacilityId: {FacilityId}",
+                    invoice.Id, item.ServiceName, item.DiscountAmount, facilityId);
+            }
 
             _logger.LogInformation("Invoice updated. InvoiceId: {InvoiceId}, FacilityId: {FacilityId}", invoice.Id, facilityId);
 

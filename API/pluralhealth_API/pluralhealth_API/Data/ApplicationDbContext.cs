@@ -73,6 +73,12 @@ namespace pluralhealth_API.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Invoice>()
+                .HasOne(i => i.Appointment)
+                .WithMany()
+                .HasForeignKey(i => i.AppointmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Invoice>()
                 .HasOne(i => i.Facility)
                 .WithMany()
                 .HasForeignKey(i => i.FacilityId)
@@ -137,9 +143,9 @@ namespace pluralhealth_API.Data
             modelBuilder.Entity<User>().HasData(user1);
 
             // Seed Clinics
-            var clinic1 = new Clinic { Id = 1, Name = "General Medicine", FacilityId = 1 };
-            var clinic2 = new Clinic { Id = 2, Name = "Pediatrics", FacilityId = 1 };
-            var clinic3 = new Clinic { Id = 3, Name = "Cardiology", FacilityId = 1 };
+            var clinic1 = new Clinic { Id = 1, Name = "Lekki Phase 1 Branch", FacilityId = 1 };
+            var clinic2 = new Clinic { Id = 2, Name = "Ikeja Branch", FacilityId = 1 };
+            var clinic3 = new Clinic { Id = 3, Name = "Victoria Island Branch", FacilityId = 1 };
 
             modelBuilder.Entity<Clinic>().HasData(clinic1, clinic2, clinic3);
 

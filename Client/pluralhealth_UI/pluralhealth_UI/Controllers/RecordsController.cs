@@ -23,9 +23,9 @@ namespace pluralhealth_UI.Controllers
             int page = 1,
             int pageSize = 20)
         {
-            // Default to today and next 7 days (using local time)
+            // Default to today only (using local time)
             var localStartDate = startDate ?? DateTime.Today;
-            var localEndDate = endDate ?? DateTime.Today.AddDays(7).AddTicks(-1);
+            var localEndDate = endDate ?? DateTime.Today.AddDays(1).AddTicks(-1); // End of today
             
             var viewModel = new RecordsIndexViewModel
             {

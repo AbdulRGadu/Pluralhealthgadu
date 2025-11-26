@@ -94,6 +94,12 @@
                                                 Create Invoice
                                             </button>
                                         }
+                                        else if (record.InvoiceStatus == "Draft")
+                                        {
+                                            <a href="@Url.Action("Edit", "Invoices", new { id = record.InvoiceId })" class="btn btn-sm btn-warning">
+                                                Edit Invoice
+                                            </a>
+                                        }
                                         else if (record.InvoiceStatus == "Finalized" || record.InvoiceStatus == "PartiallyPaid")
                                         {
                                             <button class="btn btn-sm btn-primary pay-invoice-btn" data-invoice-id="@record.InvoiceId">
@@ -138,7 +144,8 @@
             document.querySelectorAll('.create-invoice-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const patientId = this.getAttribute('data-patient-id');
-                    window.location.href = '@Url.Action("Create", "Invoices")?patientId=' + patientId;
+                    const appointmentId = this.getAttribute('data-appointment-id');
+                    window.location.href = '@Url.Action("Create", "Invoices")?patientId=' + patientId + '&appointmentId=' + appointmentId;
                 });
             });
 

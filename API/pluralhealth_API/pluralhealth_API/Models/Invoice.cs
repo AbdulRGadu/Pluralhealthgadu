@@ -5,6 +5,8 @@ namespace pluralhealth_API.Models
         public int Id { get; set; }
         public int PatientId { get; set; }
         public Patient? Patient { get; set; }
+        public int? AppointmentId { get; set; }
+        public Appointment? Appointment { get; set; }
         public string? InvoiceNumber { get; set; }
         public string Status { get; set; } = "Draft"; // Draft, Finalized, PartiallyPaid, Paid
         public decimal Subtotal { get; set; }
