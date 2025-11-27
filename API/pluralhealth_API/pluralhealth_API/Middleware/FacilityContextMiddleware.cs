@@ -14,11 +14,9 @@ namespace pluralhealth_API.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             // For MVP: Mock facility and user context
-            // In production, this would extract from JWT token or session
             var facilityId = context.Request.Headers["X-Facility-Id"].FirstOrDefault();
             var userId = context.Request.Headers["X-User-Id"].FirstOrDefault();
 
-            // Default values for MVP if headers not provided
             context.Items[FacilityIdKey] = int.TryParse(facilityId, out var fid) ? fid : 1;
             context.Items[UserIdKey] = int.TryParse(userId, out var uid) ? uid : 1;
 

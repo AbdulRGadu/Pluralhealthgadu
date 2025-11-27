@@ -49,7 +49,7 @@ namespace pluralhealth_UI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                // Reload patients list even on validation error
+                // Reload patients list 
                 try
                 {
                     var patientsResponse = await _apiClient.GetAsync<List<PatientListItem>>("/api/patients/list");
