@@ -23,20 +23,57 @@ namespace pluralhealth_UI.Services
         {
             try
             {
+                _logger.LogInformation("Calling GET {Endpoint}", endpoint);
                 var response = await _httpClient.GetAsync(endpoint);
-                response.EnsureSuccessStatusCode();
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("HTTP error calling GET {Endpoint}: {StatusCode} - {Error}", endpoint, response.StatusCode, errorContent);
+                    return default(T);
+                }
+                
                 var content = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<T>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return result;
+                _logger.LogInformation("GET {Endpoint} response length: {Length} chars", endpoint, content?.Length ?? 0);
+                
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    _logger.LogWarning("GET {Endpoint} returned empty content", endpoint);
+                    return default(T);
+                }
+                
+                try
+                {
+                    var options = new JsonSerializerOptions 
+                    { 
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    };
+                    var result = JsonSerializer.Deserialize<T>(content, options);
+                    if (result == null)
+                    {
+                        _logger.LogWarning("GET {Endpoint} deserialization returned null. Content was: {Content}", endpoint, content);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("GET {Endpoint} successfully deserialized response", endpoint);
+                    }
+                    return result;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(ex, "JSON deserialization error for GET {Endpoint}. Content: {Content}. Error: {Error}", endpoint, content, ex.Message);
+                    return default(T);
+                }
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                _logger.LogWarning("HTTP error calling GET {Endpoint}", endpoint);
+                _logger.LogWarning("HTTP error calling GET {Endpoint}: {Message}", endpoint, ex.Message);
                 return default(T);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calling GET {Endpoint}", endpoint);
+                _logger.LogError(ex, "Error calling GET {Endpoint}: {Message}", endpoint, ex.Message);
                 throw;
             }
         }

@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pluralhealth_UI.Models.ViewModels;
 using pluralhealth_UI.Services;
 
 namespace pluralhealth_UI.Controllers
 {
+    [Authorize]
     public class AppointmentsController : Controller
     {
         private readonly ApiClient _apiClient;

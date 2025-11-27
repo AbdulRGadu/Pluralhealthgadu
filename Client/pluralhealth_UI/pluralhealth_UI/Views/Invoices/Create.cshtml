@@ -1,6 +1,7 @@
 @model pluralhealth_UI.Models.ViewModels.CreateInvoiceViewModel
 @{
-    ViewData["Title"] = "Create Invoice";
+    ViewData["Title"] = Model.InvoiceId.HasValue ? "Edit Invoice" : "Create Invoice";
+    var isEdit = Model.InvoiceId.HasValue;
 }
 
 <div class="container mt-4">

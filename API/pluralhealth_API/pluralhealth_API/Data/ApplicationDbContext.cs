@@ -131,16 +131,24 @@ namespace pluralhealth_API.Data
 
             modelBuilder.Entity<Facility>().HasData(facility1);
 
-            // Seed User
+            // Seed Users
             var user1 = new User
             {
                 Id = 1,
                 Username = "admin",
-                Role = "FrontDesk",
+                Role = "Admin",
                 FacilityId = 1
             };
 
-            modelBuilder.Entity<User>().HasData(user1);
+            var user2 = new User
+            {
+                Id = 2,
+                Username = "superadmin",
+                Role = "SuperAdmin",
+                FacilityId = 1
+            };
+
+            modelBuilder.Entity<User>().HasData(user1, user2);
 
             // Seed Clinics
             var clinic1 = new Clinic { Id = 1, Name = "Lekki Phase 1 Branch", FacilityId = 1 };

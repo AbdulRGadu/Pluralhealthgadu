@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pluralhealth_UI.Models.ViewModels;
 using pluralhealth_UI.Services;
@@ -6,6 +7,7 @@ using System.Text.Json.Serialization;
 
 namespace pluralhealth_UI.Controllers
 {
+    [Authorize]
     public class PaymentsController : Controller
     {
         private readonly ApiClient _apiClient;

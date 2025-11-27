@@ -19,22 +19,6 @@ namespace pluralhealth_API.Controllers
             _logger = logger;
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<object>> GetPatient(int id)
-        {
-            var facilityId = (int)(HttpContext.Items["FacilityId"] ?? 1);
-
-            var patient = await _context.Patients
-                .Where(p => p.Id == id && p.FacilityId == facilityId)
-                .Select(p => new { p.Id, p.Code, p.Name, p.Phone, p.WalletBalance, p.Currency })
-                .FirstOrDefaultAsync();
-
-            if (patient == null)
-                return NotFound();
-
-            return Ok(patient);
-        }
-
         [HttpGet("search")]
         public async Task<ActionResult<List<object>>> SearchPatients([FromQuery] string q)
         {
@@ -51,6 +35,36 @@ namespace pluralhealth_API.Controllers
                 .ToListAsync();
 
             return Ok(patients);
+        }
+
+        [HttpGet("list")]
+        public async Task<ActionResult<List<object>>> GetPatients()
+        {
+            var facilityId = (int)(HttpContext.Items["FacilityId"] ?? 1);
+
+            var patients = await _context.Patients
+                .Where(p => p.FacilityId == facilityId)
+                .Select(p => new { p.Id, p.Code, p.Name, p.Phone, p.WalletBalance, p.Currency, p.Status })
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            return Ok(patients);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<object>> GetPatient(int id)
+        {
+            var facilityId = (int)(HttpContext.Items["FacilityId"] ?? 1);
+
+            var patient = await _context.Patients
+                .Where(p => p.Id == id && p.FacilityId == facilityId)
+                .Select(p => new { p.Id, p.Code, p.Name, p.Phone, p.WalletBalance, p.Currency })
+                .FirstOrDefaultAsync();
+
+            if (patient == null)
+                return NotFound();
+
+            return Ok(patient);
         }
 
         [HttpPost]

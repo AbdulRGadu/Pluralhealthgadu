@@ -1,10 +1,15 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
+    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Unknown";
+    var roleDisplay = userRole == "Admin" ? "Admin" : "SuperAdmin";
 }
 
 <div class="text-center">
     <h1 class="display-4">Welcome to Pluralhealth</h1>
     <p class="lead">Appointment & Billing Management System</p>
+    <div class="alert alert-info mt-3" role="alert">
+        <strong>Welcome frontdesk, you are logged in as @roleDisplay</strong>
+    </div>
     <hr />
     <div class="row mt-4">
         <div class="col-md-4">
