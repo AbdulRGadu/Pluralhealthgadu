@@ -1,0 +1,74 @@
+@model pluralhealth_UI.Models.ViewModels.PaidInvoicesViewModel
+@{
+    ViewData["Title"] = "Paid Invoices";
+}
+
+<div class="container mt-4">
+    <h2>Paid Invoices</h2>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    @if (Model.Invoices.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h5>All Paid Invoices (@Model.Invoices.Count total)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="paidInvoicesTable" data-paginate="true" data-page-size="20">
+                        <thead>
+                            <tr>
+                                <th>Invoice Number</th>
+                                <th>Patient</th>
+                                <th>Date Finalized</th>
+                                <th>Subtotal</th>
+                                <th>Discount</th>
+                                <th>Total</th>
+                                <th>Total Paid</th>
+                                <th>Payments</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var invoice in Model.Invoices)
+                            {
+                                <tr>
+                                    <td><strong>@(invoice.InvoiceNumber ?? $"INV-{invoice.Id}")</strong></td>
+                                    <td>
+                                        <strong>@invoice.PatientName</strong><br />
+                                        <small class="text-muted">@invoice.PatientCode</small>
+                                    </td>
+                                    <td>@(invoice.FinalizedAt?.ToString("MM/dd/yyyy HH:mm") ?? invoice.CreatedAt.ToString("MM/dd/yyyy HH:mm"))</td>
+                                    <td>@invoice.Currency @invoice.Subtotal.ToString("N2")</td>
+                                    <td>@invoice.Currency @invoice.DiscountAmount.ToString("N2")</td>
+                                    <td><strong>@invoice.Currency @invoice.Total.ToString("N2")</strong></td>
+                                    <td class="text-success"><strong>@invoice.Currency @invoice.TotalPaid.ToString("N2")</strong></td>
+                                    <td>
+                                        <span class="badge bg-info">@invoice.PaymentCount payment(s)</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">@invoice.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div id="paidInvoicesTablePagination"></div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info mt-4" role="alert">
+            No paid invoices found.
+        </div>
+    }
+</div>
+

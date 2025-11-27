@@ -85,9 +85,15 @@ namespace pluralhealth_API.Controllers
             var facilityId = (int)(HttpContext.Items["FacilityId"] ?? 1);
             var userId = (int)(HttpContext.Items["UserId"] ?? 1);
 
-            // Validation
-            if (request.PatientId <= 0 || request.ClinicId <= 0 || request.AppointmentTypeId <= 0)
-                return BadRequest("PatientId, ClinicId, and AppointmentTypeId are required.");
+            // Validation with user-friendly messages
+            if (request.PatientId <= 0)
+                return BadRequest("Please select a patient. Search for a patient first and select them from the dropdown.");
+            
+            if (request.ClinicId <= 0)
+                return BadRequest("Please select a clinic.");
+            
+            if (request.AppointmentTypeId <= 0)
+                return BadRequest("Please select an appointment type.");
 
             // Allow appointments starting from now (with 1 minute buffer, using local time)
             if (request.StartTime < DateTime.Now.AddMinutes(-1))
@@ -97,19 +103,19 @@ namespace pluralhealth_API.Controllers
             var patient = await _context.Patients
                 .FirstOrDefaultAsync(p => p.Id == request.PatientId && p.FacilityId == facilityId);
             if (patient == null)
-                return NotFound("Patient not found.");
+                return BadRequest("The selected patient was not found. Please search and select a valid patient.");
 
             // Verify clinic exists and belongs to facility
             var clinic = await _context.Clinics
                 .FirstOrDefaultAsync(c => c.Id == request.ClinicId && c.FacilityId == facilityId);
             if (clinic == null)
-                return NotFound("Clinic not found.");
+                return BadRequest("The selected clinic was not found. Please select a valid clinic.");
 
             // Get appointment type and default duration
             var appointmentType = await _context.AppointmentTypes
                 .FirstOrDefaultAsync(at => at.Id == request.AppointmentTypeId && at.FacilityId == facilityId);
             if (appointmentType == null)
-                return NotFound("Appointment type not found.");
+                return BadRequest("The selected appointment type was not found. Please select a valid appointment type.");
 
             var duration = request.DurationMinutes ?? appointmentType.DefaultDurationMinutes;
 

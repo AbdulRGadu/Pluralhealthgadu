@@ -35,11 +35,18 @@ namespace pluralhealth_UI.Controllers
                 var appointmentTypesResponse = await _apiClient.GetAsync<List<AppointmentTypeOption>>("/api/appointmenttypes");
                 viewModel.AppointmentTypes = appointmentTypesResponse ?? new List<AppointmentTypeOption>();
 
-                // Search patients if search term provided
+                // Load patients - use search if search term provided, otherwise load all
                 if (!string.IsNullOrWhiteSpace(patientSearch))
                 {
+                    // Filter patients based on search
                     var patients = await _apiClient.GetAsync<List<PatientOption>>($"/api/patients/search?q={Uri.EscapeDataString(patientSearch)}");
                     viewModel.Patients = patients ?? new List<PatientOption>();
+                }
+                else
+                {
+                    // Load all patients by default
+                    var allPatients = await _apiClient.GetAsync<List<PatientOption>>("/api/patients/list");
+                    viewModel.Patients = allPatients ?? new List<PatientOption>();
                 }
 
                 // Load all appointments (sorted by date/time ascending)
@@ -89,15 +96,28 @@ namespace pluralhealth_UI.Controllers
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Error creating appointment");
-                // Extract error message from exception
-                model.ErrorMessage = ex.Message.Contains("API Error") ? ex.Message : "An error occurred while creating the appointment. Please try again.";
                 
-                // Reload dropdowns and appointments list
+                // Parse user-friendly error message from API response
+                model.ErrorMessage = ParseApiErrorMessage(ex.Message);
+                
+                // Reload dropdowns, patients, and appointments list
                 var clinics = await _apiClient.GetAsync<List<ClinicOption>>("/api/clinics");
                 model.Clinics = clinics ?? new List<ClinicOption>();
 
                 var appointmentTypes = await _apiClient.GetAsync<List<AppointmentTypeOption>>("/api/appointmenttypes");
                 model.AppointmentTypes = appointmentTypes ?? new List<AppointmentTypeOption>();
+
+                // Reload patients (all or filtered based on search)
+                if (!string.IsNullOrWhiteSpace(model.PatientSearch))
+                {
+                    var patients = await _apiClient.GetAsync<List<PatientOption>>($"/api/patients/search?q={Uri.EscapeDataString(model.PatientSearch)}");
+                    model.Patients = patients ?? new List<PatientOption>();
+                }
+                else
+                {
+                    var allPatients = await _apiClient.GetAsync<List<PatientOption>>("/api/patients/list");
+                    model.Patients = allPatients ?? new List<PatientOption>();
+                }
 
                 var appointments = await _apiClient.GetAsync<List<AppointmentListItem>>("/api/appointments/list");
                 model.Appointments = appointments ?? new List<AppointmentListItem>();
@@ -109,18 +129,73 @@ namespace pluralhealth_UI.Controllers
                 _logger.LogError(ex, "Error creating appointment");
                 model.ErrorMessage = "An error occurred while creating the appointment. Please try again.";
                 
-                // Reload dropdowns and appointments list
+                // Reload dropdowns, patients, and appointments list
                 var clinics = await _apiClient.GetAsync<List<ClinicOption>>("/api/clinics");
                 model.Clinics = clinics ?? new List<ClinicOption>();
 
                 var appointmentTypes = await _apiClient.GetAsync<List<AppointmentTypeOption>>("/api/appointmenttypes");
                 model.AppointmentTypes = appointmentTypes ?? new List<AppointmentTypeOption>();
 
+                // Reload patients (all or filtered based on search)
+                if (!string.IsNullOrWhiteSpace(model.PatientSearch))
+                {
+                    var patients = await _apiClient.GetAsync<List<PatientOption>>($"/api/patients/search?q={Uri.EscapeDataString(model.PatientSearch)}");
+                    model.Patients = patients ?? new List<PatientOption>();
+                }
+                else
+                {
+                    var allPatients = await _apiClient.GetAsync<List<PatientOption>>("/api/patients/list");
+                    model.Patients = allPatients ?? new List<PatientOption>();
+                }
+
                 var appointments = await _apiClient.GetAsync<List<AppointmentListItem>>("/api/appointments/list");
                 model.Appointments = appointments ?? new List<AppointmentListItem>();
 
                 return View(model);
             }
+        }
+
+        private string ParseApiErrorMessage(string errorMessage)
+        {
+            // Try to extract user-friendly message from API error response
+            if (string.IsNullOrWhiteSpace(errorMessage))
+                return "An error occurred while creating the appointment. Please try again.";
+
+            // Check if it's a direct error message (from BadRequest with string)
+            if (errorMessage.Contains("Please select") || errorMessage.Contains("not found") || 
+                errorMessage.Contains("cannot be in the past"))
+            {
+                // Extract the message between quotes or after colon
+                var colonIndex = errorMessage.LastIndexOf(':');
+                if (colonIndex > 0)
+                {
+                    var message = errorMessage.Substring(colonIndex + 1).Trim();
+                    // Remove JSON formatting if present
+                    message = message.Replace("\"", "").Replace("{", "").Replace("}", "").Trim();
+                    if (!string.IsNullOrWhiteSpace(message))
+                        return message;
+                }
+            }
+
+            // Check for validation errors in JSON format
+            if (errorMessage.Contains("errors") || errorMessage.Contains("validation"))
+            {
+                // Common validation error messages
+                if (errorMessage.Contains("patientId") || errorMessage.Contains("PatientId"))
+                    return "Please select a patient. Search for a patient first and select them from the dropdown.";
+                
+                if (errorMessage.Contains("clinicId") || errorMessage.Contains("ClinicId"))
+                    return "Please select a clinic.";
+                
+                if (errorMessage.Contains("appointmentTypeId") || errorMessage.Contains("AppointmentTypeId"))
+                    return "Please select an appointment type.";
+                
+                if (errorMessage.Contains("request"))
+                    return "Please fill in all required fields: Patient, Clinic, Appointment Type, Date, and Time.";
+            }
+
+            // Default fallback
+            return "An error occurred while creating the appointment. Please ensure all fields are filled correctly and try again.";
         }
     }
 }

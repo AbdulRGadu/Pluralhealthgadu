@@ -33,23 +33,24 @@
                     </div>
                 </div>
 
-                @if (Model.Patients.Any())
-                {
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <label for="patientId" class="form-label">Select Patient</label>
-                            <select class="form-select" id="patientId" name="PatientId" required>
-                                <option value="">-- Select Patient --</option>
-                                @foreach (var patient in Model.Patients)
-                                {
-                                    <option value="@patient.Id" selected="@(Model.PatientId == patient.Id)">
-                                        @patient.Name (@patient.Code) - @patient.Phone
-                                    </option>
-                                }
-                            </select>
-                        </div>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="patientId" class="form-label">Select Patient</label>
+                        <select class="form-select" id="patientId" name="PatientId" required>
+                            <option value="">-- Select Patient --</option>
+                            @foreach (var patient in Model.Patients)
+                            {
+                                <option value="@patient.Id" selected="@(Model.PatientId == patient.Id)">
+                                    @patient.Name (@patient.Code)@(string.IsNullOrEmpty(patient.Phone) ? "" : $" - {patient.Phone}")
+                                </option>
+                            }
+                        </select>
+                        @if (Model.Patients.Any())
+                        {
+                            <small class="form-text text-muted">Showing @Model.Patients.Count patient(s)@(string.IsNullOrWhiteSpace(Model.PatientSearch) ? "" : $" matching '{Model.PatientSearch}'")</small>
+                        }
                     </div>
-                }
+                </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
@@ -109,7 +110,7 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover" id="appointmentsTable" data-paginate="true" data-page-size="20">
                         <thead>
                             <tr>
                                 <th>Date & Time</th>
@@ -140,6 +141,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="appointmentsTablePagination"></div>
             </div>
         </div>
     }
@@ -166,6 +168,33 @@
             const duration = selectedOption.getAttribute('data-duration');
             if (duration) {
                 document.getElementById('durationMinutes').value = duration;
+            }
+        });
+
+        // Client-side validation before form submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const patientId = document.getElementById('patientId');
+            const clinicId = document.getElementById('clinicId');
+            const appointmentTypeId = document.getElementById('appointmentTypeId');
+            
+            let errors = [];
+            
+            if (!patientId || !patientId.value || patientId.value === '') {
+                errors.push('Please select a patient. Search for a patient first.');
+            }
+            
+            if (!clinicId || !clinicId.value || clinicId.value === '') {
+                errors.push('Please select a clinic.');
+            }
+            
+            if (!appointmentTypeId || !appointmentTypeId.value || appointmentTypeId.value === '') {
+                errors.push('Please select an appointment type.');
+            }
+            
+            if (errors.length > 0) {
+                e.preventDefault();
+                alert('Please fix the following errors:\n\n' + errors.join('\n'));
+                return false;
             }
         });
     </script>

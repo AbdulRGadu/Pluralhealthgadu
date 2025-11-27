@@ -152,6 +152,40 @@ namespace pluralhealth_API.Controllers
             return CreatedAtAction(nameof(GetInvoice), new { id = invoice.Id }, invoice);
         }
 
+        [HttpGet("paid")]
+        public async Task<ActionResult<List<object>>> GetPaidInvoices()
+        {
+            var facilityId = (int)(HttpContext.Items["FacilityId"] ?? 1);
+
+            var invoices = await _context.Invoices
+                .Include(i => i.Patient)
+                .Include(i => i.Payments)
+                .Where(i => i.FacilityId == facilityId && i.Status == "Paid")
+                .OrderByDescending(i => i.FinalizedAt ?? i.CreatedAt)
+                .ToListAsync();
+
+            var result = invoices.Select(i => new
+            {
+                id = i.Id,
+                invoiceNumber = i.InvoiceNumber,
+                patientId = i.PatientId,
+                patientName = i.Patient!.Name,
+                patientCode = i.Patient.Code,
+                appointmentId = i.AppointmentId,
+                status = i.Status,
+                subtotal = i.Subtotal,
+                discountAmount = i.DiscountAmount,
+                total = i.Total,
+                currency = i.Patient.Currency,
+                createdAt = i.CreatedAt,
+                finalizedAt = i.FinalizedAt,
+                totalPaid = i.Payments != null ? i.Payments.Sum(p => p.Amount) : 0,
+                paymentCount = i.Payments != null ? i.Payments.Count : 0
+            }).ToList();
+
+            return Ok(result);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Invoice>> GetInvoice(int id)
         {

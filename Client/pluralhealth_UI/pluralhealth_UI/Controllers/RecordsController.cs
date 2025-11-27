@@ -21,9 +21,7 @@ namespace pluralhealth_UI.Controllers
             DateTime? startDate,
             DateTime? endDate,
             int? clinicId,
-            string? search,
-            int page = 1,
-            int pageSize = 20)
+            string? search)
         {
             // Default to today only (using local time)
             var localStartDate = startDate ?? DateTime.Today;
@@ -31,8 +29,6 @@ namespace pluralhealth_UI.Controllers
             
             var viewModel = new RecordsIndexViewModel
             {
-                Page = page,
-                PageSize = pageSize,
                 StartDate = localStartDate,
                 EndDate = localEndDate,
                 ClinicId = clinicId,
@@ -41,11 +37,12 @@ namespace pluralhealth_UI.Controllers
 
             try
             {
-                // Build query string (using local time, no UTC conversion)
+                // Build query string - fetch all records (client-side pagination will handle it)
+                // Use a large pageSize to get all filtered results
                 var queryParams = new List<string>
                 {
-                    $"page={page}",
-                    $"pageSize={pageSize}",
+                    $"page=1",
+                    $"pageSize=10000", // Large number to get all results
                     $"startDate={localStartDate:yyyy-MM-ddTHH:mm:ss}",
                     $"endDate={localEndDate:yyyy-MM-ddTHH:mm:ss}"
                 };
@@ -62,7 +59,6 @@ namespace pluralhealth_UI.Controllers
                 if (response != null)
                 {
                     viewModel.TotalCount = response.TotalCount;
-                    viewModel.TotalPages = response.TotalPages;
 
                     viewModel.Records = response.Items.Select(item => new RecordItem
                     {

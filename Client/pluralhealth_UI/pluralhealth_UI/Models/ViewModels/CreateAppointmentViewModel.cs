@@ -46,9 +46,16 @@ namespace pluralhealth_UI.Models.ViewModels
 
     public class PatientOption
     {
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
         public int Id { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("code")]
         public string Code { get; set; } = string.Empty;
+        
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+        
+        [System.Text.Json.Serialization.JsonPropertyName("phone")]
         public string? Phone { get; set; }
     }
 
