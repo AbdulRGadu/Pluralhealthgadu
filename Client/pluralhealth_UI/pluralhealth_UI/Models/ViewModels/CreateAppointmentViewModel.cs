@@ -14,6 +14,34 @@ namespace pluralhealth_UI.Models.ViewModels
         public int DurationMinutes { get; set; } = 60;
         public string? ErrorMessage { get; set; }
         public string? SuccessMessage { get; set; }
+        public List<AppointmentListItem> Appointments { get; set; } = new();
+    }
+
+    public class AppointmentListItem
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public int Id { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("patientName")]
+        public string PatientName { get; set; } = string.Empty;
+        
+        [System.Text.Json.Serialization.JsonPropertyName("patientCode")]
+        public string PatientCode { get; set; } = string.Empty;
+        
+        [System.Text.Json.Serialization.JsonPropertyName("clinicName")]
+        public string ClinicName { get; set; } = string.Empty;
+        
+        [System.Text.Json.Serialization.JsonPropertyName("appointmentTypeName")]
+        public string AppointmentTypeName { get; set; } = string.Empty;
+        
+        [System.Text.Json.Serialization.JsonPropertyName("startTime")]
+        public DateTime StartTime { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("durationMinutes")]
+        public int DurationMinutes { get; set; }
+        
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
     }
 
     public class PatientOption

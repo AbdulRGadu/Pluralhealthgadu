@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using pluralhealth_API.Data;
 using pluralhealth_API.DTOs;
 using pluralhealth_API.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace pluralhealth_API.Controllers
 {
@@ -17,6 +18,33 @@ namespace pluralhealth_API.Controllers
         {
             _context = context;
             _logger = logger;
+        }
+
+        [HttpGet("list")]
+        public async Task<ActionResult<List<object>>> GetAllAppointments()
+        {
+            var facilityId = (int)(HttpContext.Items["FacilityId"] ?? 1);
+
+            var appointments = await _context.Appointments
+                .Include(a => a.Patient)
+                .Include(a => a.Clinic)
+                .Include(a => a.AppointmentType)
+                .Where(a => a.FacilityId == facilityId)
+                .OrderBy(a => a.StartTime) // Default ascending by date/time
+                .Select(a => new 
+                {
+                    id = a.Id,
+                    patientName = a.Patient!.Name,
+                    patientCode = a.Patient.Code,
+                    clinicName = a.Clinic!.Name,
+                    appointmentTypeName = a.AppointmentType!.Name,
+                    startTime = a.StartTime,
+                    durationMinutes = a.DurationMinutes,
+                    status = a.Status
+                })
+                .ToListAsync();
+
+            return Ok(appointments);
         }
 
         [HttpGet("{id}")]

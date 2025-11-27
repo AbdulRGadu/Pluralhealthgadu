@@ -164,75 +164,67 @@ namespace pluralhealth_API.Data
 
             modelBuilder.Entity<AppointmentType>().HasData(appointmentType1, appointmentType2, appointmentType3);
 
-            // Seed Patients
-            var patient1 = new Patient
+            // Seed Patients (25 patients)
+            var patients = new List<Patient>();
+            var patientNames = new[]
             {
-                Id = 1,
-                Code = "P001",
-                Name = "John Doe",
-                Phone = "+2341234567890",
-                WalletBalance = 50000.00m,
-                Currency = "NGN",
-                FacilityId = 1,
-                Status = "Processing"
+               "Gadu Abdulrasheed", "Olakunbi Oshin", "	Divine Orisejobor", "Pokhae P", "Segun Dada", "Zainab Usman", "Obinna Eke", "Ifẹyínwa Adekunle", "Babatunde Kolawole", 
+               "Oshin Ola", "Kelechi Nwachukwu", "Funmilayo Awolowo", "Musa Abubakar", "Amara Ozo", "Ayodele Oladeji", "Chiamaka Nwosu", "Jide Owolabi",
+                "Fatima Danjuma", "Emeka Okafor", "Ibukunoluwa Shittu", "Idris Aliyu", "Chioma Agwu", "Oluwafemi Johnson", "Kemi Obafemi", "Abdulrahman Adamu"
             };
+            
+            var statuses = new[] { "Processing", "Awaiting Vitals", "Processing", "Awaiting Vitals" };
+            var random = new Random(42); // Fixed seed for consistent data
 
-            var patient2 = new Patient
+            for (int i = 0; i < 25; i++)
             {
-                Id = 2,
-                Code = "P002",
-                Name = "Jane Smith",
-                Phone = "+2341234567891",
-                WalletBalance = 75000.50m,
-                Currency = "NGN",
-                FacilityId = 1,
-                Status = "Processing"
-            };
+                patients.Add(new Patient
+                {
+                    Id = i + 1,
+                    Code = $"P{(i + 1):D3}",
+                    Name = patientNames[i],
+                    Phone = $"+2341234567{i:D3}",
+                    WalletBalance = random.Next(10000, 100000) + (decimal)(random.NextDouble() * 100),
+                    Currency = "NGN",
+                    FacilityId = 1,
+                    Status = statuses[i % statuses.Length]
+                });
+            }
 
-            var patient3 = new Patient
+            modelBuilder.Entity<Patient>().HasData(patients);
+
+            // Seed Appointments (10 appointments)
+            var appointments = new List<Appointment>();
+            var baseTime = DateTime.Now;
+            // Reuse the random instance from above
+
+            for (int i = 0; i < 10; i++)
             {
-                Id = 3,
-                Code = "P003",
-                Name = "Bob Johnson",
-                Phone = "+2341234567892",
-                WalletBalance = 20000.00m,
-                Currency = "NGN",
-                FacilityId = 1,
-                Status = "Awaiting Vitals"
-            };
+                var patientId = random.Next(1, 26); // Random patient from 1-25
+                var clinicId = random.Next(1, 4); // Random clinic from 1-3
+                var appointmentTypeId = random.Next(1, 4); // Random appointment type from 1-3
+                var hoursOffset = random.Next(-24, 72); // Appointments from yesterday to 3 days ahead
+                var appointmentTime = baseTime.AddHours(hoursOffset).AddMinutes(random.Next(0, 60));
+                
+                // Get duration from appointment type
+                var duration = appointmentTypeId == 1 ? 30 : appointmentTypeId == 2 ? 15 : 60;
 
-            modelBuilder.Entity<Patient>().HasData(patient1, patient2, patient3);
+                appointments.Add(new Appointment
+                {
+                    Id = i + 1,
+                    PatientId = patientId,
+                    ClinicId = clinicId,
+                    AppointmentTypeId = appointmentTypeId,
+                    StartTime = appointmentTime,
+                    DurationMinutes = duration,
+                    Status = "Scheduled",
+                    FacilityId = 1,
+                    CreatedBy = 1,
+                    CreatedAt = baseTime.AddDays(-random.Next(0, 7)) // Created within last week
+                });
+            }
 
-            // Seed Appointments
-            var appointment1 = new Appointment
-            {
-                Id = 1,
-                PatientId = 1,
-                ClinicId = 1,
-                AppointmentTypeId = 1,
-                StartTime = DateTime.Now.AddHours(2),
-                DurationMinutes = 30,
-                Status = "Scheduled",
-                FacilityId = 1,
-                CreatedBy = 1,
-                CreatedAt = DateTime.Now
-            };
-
-            var appointment2 = new Appointment
-            {
-                Id = 2,
-                PatientId = 2,
-                ClinicId = 2,
-                AppointmentTypeId = 3,
-                StartTime = DateTime.Now.AddHours(4),
-                DurationMinutes = 60,
-                Status = "Scheduled",
-                FacilityId = 1,
-                CreatedBy = 1,
-                CreatedAt = DateTime.Now
-            };
-
-            modelBuilder.Entity<Appointment>().HasData(appointment1, appointment2);
+            modelBuilder.Entity<Appointment>().HasData(appointments);
         }
     }
 }

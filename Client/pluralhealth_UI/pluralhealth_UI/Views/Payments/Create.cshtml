@@ -25,6 +25,7 @@
             <h5>Invoice Summary</h5>
             <p><strong>Invoice Number:</strong> @Model.InvoiceNumber</p>
             <p><strong>Patient:</strong> @Model.PatientName</p>
+            <p><strong>Wallet Balance:</strong> @Model.Currency @Model.WalletBalance.ToString("N2")</p>
             <p><strong>Invoice Total:</strong> @Model.Currency @Model.InvoiceTotal.ToString("N2")</p>
             <p><strong>Total Paid:</strong> @Model.Currency @Model.TotalPaid.ToString("N2")</p>
             <p><strong>Remaining Balance:</strong> <span class="text-danger">@Model.Currency @Model.RemainingBalance.ToString("N2")</span></p>
@@ -60,7 +61,7 @@
 
                 <div class="row">
                     <div class="col-md-12">
-                        <button type="submit" class="btn btn-primary">Process Payment</button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">Process Payment</button>
                         <a href="@Url.Action("Index", "Records")" class="btn btn-secondary">Cancel</a>
                     </div>
                 </div>
@@ -71,12 +72,72 @@
 
 @section Scripts {
     <script>
-        // Set max amount to remaining balance
-        document.getElementById('Amount').addEventListener('input', function() {
-            const maxAmount = @Model.RemainingBalance;
-            if (parseFloat(this.value) > maxAmount) {
-                this.value = maxAmount.toFixed(2);
+        const walletBalance = @Model.WalletBalance;
+        const remainingBalance = @Model.RemainingBalance;
+        const amountInput = document.getElementById('Amount');
+        const paymentMethodSelect = document.getElementById('PaymentMethod');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function validatePaymentAmount() {
+            const amount = parseFloat(amountInput.value) || 0;
+            const paymentMethod = paymentMethodSelect.value;
+
+            // Check if amount exceeds remaining balance
+            if (amount > remainingBalance) {
+                amountInput.value = remainingBalance.toFixed(2);
+                return;
             }
+
+            // Check wallet balance if paying via wallet
+            if (paymentMethod === 'Wallet') {
+                if (amount > walletBalance) {
+                    alert(`Insufficient wallet funds. Wallet balance: @Model.Currency ${walletBalance.toFixed(2)}, Payment amount: @Model.Currency ${amount.toFixed(2)}`);
+                    amountInput.value = Math.min(walletBalance, remainingBalance).toFixed(2);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Validate on amount change
+        amountInput.addEventListener('input', function() {
+            validatePaymentAmount();
+        });
+
+        // Validate on payment method change
+        paymentMethodSelect.addEventListener('change', function() {
+            validatePaymentAmount();
+        });
+
+        // Prevent duplicate form submissions (idempotency) and validate before submit
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (submitBtn.disabled) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Final validation before submit
+            if (!validatePaymentAmount()) {
+                e.preventDefault();
+                return false;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+        });
+
+        // Initialize max amount display
+        const paymentMethod = paymentMethodSelect.value;
+        const maxAmount = paymentMethod === 'Wallet' ? Math.min(walletBalance, remainingBalance) : remainingBalance;
+        document.querySelector('.form-text.text-muted').textContent = 
+            `Maximum: @Model.Currency ${maxAmount.toFixed(2)}${paymentMethod === 'Wallet' ? ' (Wallet balance)' : ''}`;
+        
+        // Update max amount display when payment method changes
+        paymentMethodSelect.addEventListener('change', function() {
+            const method = this.value;
+            const max = method === 'Wallet' ? Math.min(walletBalance, remainingBalance) : remainingBalance;
+            document.querySelector('.form-text.text-muted').textContent = 
+                `Maximum: @Model.Currency ${max.toFixed(2)}${method === 'Wallet' ? ' (Wallet balance)' : ''}`;
         });
     </script>
 }

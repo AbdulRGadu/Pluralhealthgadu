@@ -52,6 +52,36 @@ namespace pluralhealth_API.Controllers
             if (request.Amount > remainingBalance)
                 return BadRequest($"Payment amount exceeds remaining balance of {remainingBalance:C}.");
 
+            // Validate wallet balance if paying via wallet
+            if (request.PaymentMethod.Equals("Wallet", StringComparison.OrdinalIgnoreCase))
+            {
+                if (invoice.Patient == null)
+                    return BadRequest("Patient information not found.");
+
+                if (request.Amount > invoice.Patient.WalletBalance)
+                {
+                    _logger.LogWarning("Insufficient wallet funds. PatientId: {PatientId}, WalletBalance: {WalletBalance}, PaymentAmount: {Amount}",
+                        invoice.PatientId, invoice.Patient.WalletBalance, request.Amount);
+                    return BadRequest($"Insufficient wallet funds. Wallet balance: {invoice.Patient.WalletBalance:C}, Payment amount: {request.Amount:C}");
+                }
+            }
+
+            // Idempotency check: Prevent duplicate payments within a short time window (5 seconds)
+            // Check if an identical payment was just processed
+            var recentPayment = await _context.Payments
+                .Where(p => p.InvoiceId == request.InvoiceId &&
+                    p.Amount == request.Amount &&
+                    p.CreatedBy == userId &&
+                    p.CreatedAt >= DateTime.Now.AddSeconds(-5))
+                .FirstOrDefaultAsync();
+            
+            if (recentPayment != null)
+            {
+                _logger.LogWarning("Duplicate payment attempt detected. InvoiceId: {InvoiceId}, Amount: {Amount}, UserId: {UserId}",
+                    request.InvoiceId, request.Amount, userId);
+                return BadRequest("A payment with this amount was recently processed. Please refresh the page.");
+            }
+
             // Create payment
             var payment = new Payment
             {
@@ -76,18 +106,21 @@ namespace pluralhealth_API.Controllers
                 invoice.Status = "PartiallyPaid";
             }
 
-            // Update patient wallet balance (deduct payment)
-            if (invoice.Patient != null)
+            // Update patient wallet balance (deduct payment only if paying via wallet)
+            if (invoice.Patient != null && request.PaymentMethod.Equals("Wallet", StringComparison.OrdinalIgnoreCase))
             {
                 invoice.Patient.WalletBalance -= request.Amount;
-                if (invoice.Patient.WalletBalance < 0)
-                    invoice.Patient.WalletBalance = 0;
+                _logger.LogInformation("Wallet balance deducted. PatientId: {PatientId}, Amount: {Amount}, NewBalance: {NewBalance}",
+                    invoice.PatientId, request.Amount, invoice.Patient.WalletBalance);
             }
 
-            // Update patient status to "Awaiting Vitals" after payment
-            if (invoice.Patient != null && invoice.Status == "Paid")
+            // Update patient status to "Awaiting Vitals" after payment (full or partial)
+            // Business rule: Move to Awaiting Vitals on any successful payment
+            if (invoice.Patient != null)
             {
                 invoice.Patient.Status = "Awaiting Vitals";
+                _logger.LogInformation("Patient {PatientId} status updated to 'Awaiting Vitals' after payment for Invoice {InvoiceId}. Payment amount: {Amount}, Invoice status: {Status}",
+                    invoice.PatientId, invoice.Id, request.Amount, invoice.Status);
             }
 
             await _context.SaveChangesAsync();

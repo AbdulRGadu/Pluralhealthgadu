@@ -13,5 +13,17 @@ namespace pluralhealth_API.DTOs
         public int CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
     }
+
+    public class AppointmentListItem
+    {
+        public int Id { get; set; }
+        public string PatientName { get; set; } = string.Empty;
+        public string PatientCode { get; set; } = string.Empty;
+        public string ClinicName { get; set; } = string.Empty;
+        public string AppointmentTypeName { get; set; } = string.Empty;
+        public DateTime StartTime { get; set; }
+        public int DurationMinutes { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
 }
 

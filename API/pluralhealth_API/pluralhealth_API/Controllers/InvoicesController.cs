@@ -62,6 +62,19 @@ namespace pluralhealth_API.Controllers
                         a.FacilityId == facilityId);
                 if (appointment == null)
                     return NotFound("Appointment not found or does not belong to this patient.");
+
+                // Idempotency check: Prevent creating duplicate invoices for the same appointment
+                // (unless the existing invoice is Draft and can be edited)
+                var existingInvoice = await _context.Invoices
+                    .FirstOrDefaultAsync(i => i.AppointmentId == request.AppointmentId.Value && 
+                        i.PatientId == request.PatientId && 
+                        i.FacilityId == facilityId &&
+                        i.Status != "Draft"); // Allow editing Draft invoices
+                
+                if (existingInvoice != null)
+                {
+                    return BadRequest($"An invoice already exists for this appointment (Invoice ID: {existingInvoice.Id}).");
+                }
             }
 
             // Calculate totals

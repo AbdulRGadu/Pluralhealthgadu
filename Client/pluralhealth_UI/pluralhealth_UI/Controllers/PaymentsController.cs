@@ -44,6 +44,7 @@ namespace pluralhealth_UI.Controllers
                     InvoiceTotal = invoiceResponse.Total,
                     TotalPaid = totalPaid,
                     RemainingBalance = remainingBalance,
+                    WalletBalance = invoiceResponse.Patient?.WalletBalance ?? 0,
                     Currency = invoiceResponse.Patient?.Currency ?? "NGN",
                     Amount = remainingBalance,
                     PaymentMethod = "Cash"
@@ -102,6 +103,7 @@ namespace pluralhealth_UI.Controllers
         {
             public string Name { get; set; } = string.Empty;
             public string? Currency { get; set; }
+            public decimal WalletBalance { get; set; }
         }
 
         private class PaymentInfo
